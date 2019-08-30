@@ -2,6 +2,7 @@ package tomita
 
 import (
 	"bytes"
+	"io"
 	"os/exec"
 	"strings"
 )
@@ -29,7 +30,7 @@ func (tomita Tomita) Parse(text string) (string, error) {
 	command.Stderr = &Stderr
 
 	err := command.Start()
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return "", err
 	}
 
