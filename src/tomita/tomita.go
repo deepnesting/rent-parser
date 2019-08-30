@@ -28,11 +28,7 @@ func (tomita Tomita) Parse(text string) (string, error) {
 	command.Stdout = &Stdout
 	command.Stderr = &Stderr
 
-	err := command.Run()
-	if err != nil {
-		return "", err
-	}
-	err = command.Start()
+	err := command.Start()
 	if err != nil {
 		return "", err
 	}
