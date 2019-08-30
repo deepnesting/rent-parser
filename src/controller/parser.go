@@ -1,14 +1,15 @@
 package controller
 
 import (
-	"github.com/valyala/fasthttp"
 	"encoding/json"
-	"rent-parser/src/parser/price"
-	parsetype "rent-parser/src/parser/type"
+
+	"github.com/mrsuh/rent-parser/src/parser/price"
+	parsetype "github.com/mrsuh/rent-parser/src/parser/type"
+	"github.com/valyala/fasthttp"
 )
 
 type Response struct {
-	Type int `json:"type"`
+	Type  int `json:"type"`
 	Price int `json:"price"`
 }
 

@@ -41,8 +41,9 @@ CU3 -> AnyWord<wff="(т|тыс.*)"> AnyWord<wff="(р|рублей|руб)">;
 CU4 -> AnyWord<wff="(р|рублей|руб)"> AnyWord<wff="\\.">;
 CU6 -> AnyWord<wff="(т|тыс.*)">;
 CU7 -> AnyWord<wff="(тр)">;
+CU8 -> AnyWord<wff="(к)">;
 
-Currency -> CU1 | CU2 | CU3 | CU4 | CU6 | CU7;
+Currency -> CU1 | CU2 | CU3 | CU4 | CU6 | CU7 | CU8;
 
 ROOT -> Price Number {weight=1};
 ROOT -> Price NotNumber Number {weight=1};

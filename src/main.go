@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/valyala/fasthttp"
 	config "github.com/mrsuh/cli-config"
-	"rent-parser/src/controller"
+	"github.com/mrsuh/rent-parser/src/controller"
 	"fmt"
 	"log"
 )

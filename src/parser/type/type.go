@@ -1,13 +1,14 @@
 package parser
 
 import (
-	config "github.com/mrsuh/cli-config"
-	"rent-parser/src/tomita"
-	"log"
-	"strings"
-	"regexp"
 	"encoding/xml"
 	"fmt"
+	"log"
+	"regexp"
+	"strings"
+
+	config "github.com/mrsuh/cli-config"
+	"github.com/mrsuh/rent-parser/src/tomita"
 )
 
 const ROOM = 0
@@ -25,73 +26,73 @@ type Type struct {
 }
 
 type XmlType struct {
-	XMLName   xml.Name `xml:"Type"`
-	Value     string `xml:"val,attr"`
+	XMLName xml.Name `xml:"Type"`
+	Value   string   `xml:"val,attr"`
 }
 
 type XmlWrong struct {
-	XMLName   xml.Name `xml:"Wrong"`
-	Value     string `xml:"val,attr"`
+	XMLName xml.Name `xml:"Wrong"`
+	Value   string   `xml:"val,attr"`
 }
 
 type XmlError struct {
-	XMLName   xml.Name `xml:"Error"`
-	Value     string `xml:"val,attr"`
+	XMLName xml.Name `xml:"Error"`
+	Value   string   `xml:"val,attr"`
 }
 
 type XmlFactRealty struct {
-	XMLName  xml.Name `xml:"FactRealty"`
-	TypeList []XmlType `xml:"Type"`
-	FirstWord int `xml:"fw,attr"`
-	LastWord  int `xml:"lw,attr"`
-	Sequence  int `xml:"sn,attr"`
+	XMLName   xml.Name  `xml:"FactRealty"`
+	TypeList  []XmlType `xml:"Type"`
+	FirstWord int       `xml:"fw,attr"`
+	LastWord  int       `xml:"lw,attr"`
+	Sequence  int       `xml:"sn,attr"`
 }
 
 type XmlFactRent struct {
-	XMLName  xml.Name `xml:"FactRent"`
-	TypeList []XmlType `xml:"Type"`
-	FirstWord int `xml:"fw,attr"`
-	LastWord  int `xml:"lw,attr"`
-	Sequence  int `xml:"sn,attr"`
+	XMLName   xml.Name  `xml:"FactRent"`
+	TypeList  []XmlType `xml:"Type"`
+	FirstWord int       `xml:"fw,attr"`
+	LastWord  int       `xml:"lw,attr"`
+	Sequence  int       `xml:"sn,attr"`
 }
 
 type XmlFactNeighbor struct {
-	XMLName  xml.Name `xml:"FactNeighbor"`
-	TypeList []XmlType `xml:"Type"`
-	FirstWord int `xml:"fw,attr"`
-	LastWord  int `xml:"lw,attr"`
-	Sequence  int `xml:"sn,attr"`
+	XMLName   xml.Name  `xml:"FactNeighbor"`
+	TypeList  []XmlType `xml:"Type"`
+	FirstWord int       `xml:"fw,attr"`
+	LastWord  int       `xml:"lw,attr"`
+	Sequence  int       `xml:"sn,attr"`
 }
 
 type XmlFactWrong struct {
-	XMLName  xml.Name `xml:"FactWrong"`
+	XMLName   xml.Name   `xml:"FactWrong"`
 	WrongList []XmlWrong `xml:"Wrong"`
-	FirstWord int `xml:"fw,attr"`
-	LastWord  int `xml:"lw,attr"`
-	Sequence  int `xml:"sn,attr"`
+	FirstWord int        `xml:"fw,attr"`
+	LastWord  int        `xml:"lw,attr"`
+	Sequence  int        `xml:"sn,attr"`
 }
 
 type XmlFactError struct {
-	XMLName  xml.Name `xml:"FactError"`
+	XMLName   xml.Name   `xml:"FactError"`
 	ErrorList []XmlError `xml:"Error"`
 }
 
 type XmlFacts struct {
-	XMLName          xml.Name `xml:"facts"`
-	FactRealtyList   []XmlFactRealty `xml:"FactRealty"`
-	FactRentList     []XmlFactRent `xml:"FactRent"`
+	XMLName          xml.Name          `xml:"facts"`
+	FactRealtyList   []XmlFactRealty   `xml:"FactRealty"`
+	FactRentList     []XmlFactRent     `xml:"FactRent"`
 	FactNeighborList []XmlFactNeighbor `xml:"FactNeighbor"`
-	FactWrongList    []XmlFactWrong `xml:"FactWrong"`
-	FactErrorList    []XmlFactError `xml:"FactError"`
+	FactWrongList    []XmlFactWrong    `xml:"FactWrong"`
+	FactErrorList    []XmlFactError    `xml:"FactError"`
 }
 
 type XmlDocument struct {
 	XMLName  xml.Name `xml:"document"`
-	XMLFacts XmlFacts  `xml:"facts"`
+	XMLFacts XmlFacts `xml:"facts"`
 }
 
 type XmlFdoObject struct {
-	XMLName  xml.Name `xml:"fdo_objects"`
+	XMLName  xml.Name    `xml:"fdo_objects"`
 	Document XmlDocument `xml:"document"`
 }
 

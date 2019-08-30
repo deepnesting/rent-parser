@@ -1,59 +1,60 @@
 package price
 
 import (
-	config "github.com/mrsuh/cli-config"
-	"rent-parser/src/tomita"
-	"log"
-	"strings"
-	"regexp"
 	"encoding/xml"
+	"log"
+	"regexp"
 	"strconv"
+	"strings"
+	"unicode"
+
+	config "github.com/mrsuh/cli-config"
+	"github.com/mrsuh/rent-parser/src/tomita"
 )
 
 type Price struct {
-	Value     float64
+	Value    float64
 	Position int
 	Sequence int
 }
 
-
 type XmlFull struct {
 	XMLName xml.Name `xml:"Full"`
-	Val string `xml:"val,attr"`
+	Val     string   `xml:"val,attr"`
 }
 
 type XmlHalf struct {
 	XMLName xml.Name `xml:"Half"`
-	Val string `xml:"val,attr"`
+	Val     string   `xml:"val,attr"`
 }
 
 type XmlShort struct {
 	XMLName xml.Name `xml:"Short"`
-	Val string `xml:"val,attr"`
+	Val     string   `xml:"val,attr"`
 }
 
 type XmlFactPrice struct {
-	XMLName xml.Name `xml:"FactPrice"`
-	FullList []XmlFull `xml:"Full"`
-	HalfList []XmlHalf `xml:"Half"`
+	XMLName   xml.Name   `xml:"FactPrice"`
+	FullList  []XmlFull  `xml:"Full"`
+	HalfList  []XmlHalf  `xml:"Half"`
 	ShortList []XmlShort `xml:"Short"`
-	FirstWord int `xml:"fw,attr"`
-	LastWord  int `xml:"lw,attr"`
-	Sequence  int `xml:"sn,attr"`
+	FirstWord int        `xml:"fw,attr"`
+	LastWord  int        `xml:"lw,attr"`
+	Sequence  int        `xml:"sn,attr"`
 }
 
 type XmlFacts struct {
-	XMLName xml.Name `xml:"facts"`
+	XMLName       xml.Name       `xml:"facts"`
 	FactPriceList []XmlFactPrice `xml:"FactPrice"`
 }
 
 type XmlDocument struct {
-	XMLName xml.Name `xml:"document"`
-	XMLFacts XmlFacts  `xml:"facts"`
+	XMLName  xml.Name `xml:"document"`
+	XMLFacts XmlFacts `xml:"facts"`
 }
 
 type XmlFdoObject struct {
-	XMLName xml.Name `xml:"fdo_objects"`
+	XMLName  xml.Name    `xml:"fdo_objects"`
 	Document XmlDocument `xml:"document"`
 }
 
@@ -107,6 +108,26 @@ func normalize(text string) string {
 	return string(byte_text)
 }
 
+func splitNumbers(text string) string {
+	result := &strings.Builder{}
+	for i, r := range []rune(text) {
+		// remove space if next and current letter is number
+		if i != 0 &&
+			len([]rune(text))-1 != i &&
+			unicode.IsSpace(r) &&
+			unicode.IsNumber([]rune(text)[i+1]) {
+			continue
+		}
+		result.WriteRune(r)
+		// add space if next letter not number, but current is number
+		if len([]rune(text))-1 != i && unicode.IsNumber(r) && !unicode.IsNumber([]rune(text)[i+1]) && !unicode.IsSpace([]rune(text)[i+1]) {
+			result.WriteRune(' ')
+		}
+
+	}
+	return result.String()
+}
+
 func getByXML(xml_row string) int {
 
 	var document XmlFdoObject
@@ -120,7 +141,7 @@ func getByXML(xml_row string) int {
 	}
 
 	price := Price{Value: -1, Position: 99, Sequence: 99}
-	for _,fact := range document.Document.XMLFacts.FactPriceList {
+	for _, fact := range document.Document.XMLFacts.FactPriceList {
 
 		position := fact.FirstWord
 		sequence := fact.Sequence
@@ -140,7 +161,7 @@ func getByXML(xml_row string) int {
 
 			parts := strings.Split(value_str, ".")
 
-			value_str += strings.Repeat("0", 3 - len(parts[1]))
+			value_str += strings.Repeat("0", 3-len(parts[1]))
 			value_str = strings.Replace(value_str, ".", "", -1)
 
 			value, parse_err = strconv.ParseFloat(value_str, 64)
@@ -172,7 +193,6 @@ func getByXML(xml_row string) int {
 			price.Value = value
 		}
 	}
-
 
 	return int(price.Value)
 }
