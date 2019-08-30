@@ -7,8 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	config "github.com/mrsuh/cli-config"
-	"github.com/mrsuh/rent-parser/src/tomita"
+	"github.com/deepnesting/rent-parser/src/tomita"
 )
 
 const ROOM = 0
@@ -96,23 +95,14 @@ type XmlFdoObject struct {
 	Document XmlDocument `xml:"document"`
 }
 
-func Parse(text string, response chan int) {
-
-	conf_instance := config.GetInstance()
-
-	err := conf_instance.Init()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	conf := conf_instance.Get()
-
-	tom := tomita.NewTomita(conf["tomita.bin"].(string), conf["tomita.conf.type"].(string))
-
+func Parse(tomitaBin, confPath, text string) (int, error) {
+	tom := tomita.NewTomita(tomitaBin, confPath)
 	text = normalize(text)
-
-	response <- getByXML(tom.Parse(text))
+	xml, err := tom.Parse(text)
+	if err != nil {
+		return 0, err
+	}
+	return getByXML(xml), nil
 }
 
 func PreValid(rawText string) bool {
@@ -136,8 +126,8 @@ func PreValid(rawText string) bool {
 		return false
 	}
 
-	vkId := regexp.MustCompile(`(?i)^\[id\d+`)
-	if vkId.Match(rawByteText) {
+	vkID := regexp.MustCompile(`(?i)^\[id\d+`)
+	if vkID.Match(rawByteText) {
 		return false
 	}
 

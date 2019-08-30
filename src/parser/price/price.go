@@ -8,8 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	config "github.com/mrsuh/cli-config"
-	"github.com/mrsuh/rent-parser/src/tomita"
+	"github.com/deepnesting/rent-parser/src/tomita"
 )
 
 type Price struct {
@@ -58,23 +57,16 @@ type XmlFdoObject struct {
 	Document XmlDocument `xml:"document"`
 }
 
-func Parse(text string, response chan int) {
-
-	conf_instance := config.GetInstance()
-
-	err := conf_instance.Init()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	conf := conf_instance.Get()
-
-	tom := tomita.NewTomita(conf["tomita.bin"].(string), conf["tomita.conf.price"].(string))
+func Parse(tomBin, conf, text string) (int, error) {
+	tom := tomita.NewTomita(tomBin, conf)
 
 	text = normalize(text)
+	x, err := tom.Parse(text)
+	if err != nil {
+		return 0, err
+	}
 
-	response <- getByXML(tom.Parse(text))
+	return getByXML(x), nil
 }
 
 func normalize(text string) string {

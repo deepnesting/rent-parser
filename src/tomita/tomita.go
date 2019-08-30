@@ -1,14 +1,13 @@
 package tomita
 
 import (
-	"os/exec"
 	"bytes"
-	"log"
+	"os/exec"
 	"strings"
 )
 
 type Tomita struct {
-	bin string
+	bin    string
 	config string
 }
 
@@ -21,7 +20,7 @@ func NewTomita(bin string, config string) *Tomita {
 	return p
 }
 
-func (tomita Tomita) Parse(text string) string {
+func (tomita Tomita) Parse(text string) (string, error) {
 	command := exec.Command(tomita.bin, tomita.config)
 	var Stdout bytes.Buffer
 	var Stderr bytes.Buffer
@@ -30,11 +29,13 @@ func (tomita Tomita) Parse(text string) string {
 	command.Stderr = &Stderr
 
 	err := command.Run()
-	command.Start()
-
 	if err != nil {
-		log.Fatal(err)
+		return "", err
+	}
+	err = command.Start()
+	if err != nil {
+		return "", err
 	}
 
-	return Stdout.String()
+	return Stdout.String(), nil
 }
