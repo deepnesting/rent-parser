@@ -72,7 +72,7 @@ func FixConfigPathToGzt(configPath string) error {
 		if err != nil {
 			return err
 		}
-		fullDir = filepath.Join(dir, configPath)
+		fullDir = filepath.Join(dir, filepath.Dir(configPath))
 	}
 
 	data, err := ioutil.ReadFile(configPath)
