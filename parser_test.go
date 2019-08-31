@@ -22,9 +22,12 @@ func TestParser(t *testing.T) {
 		t.Errorf("price=%d", price)
 	}
 
-	typ, err := p.ParseType(text)
+	offerType, typ, err := p.ParseType(text)
 	if err != nil {
 		t.Errorf("type err=%s", err)
+	}
+	if offerType != 1 {
+		t.Errorf("bad offer type detection got=%d", offerType)
 	}
 	if typ != 2 {
 		t.Errorf("bad type=%d", typ)
@@ -38,14 +41,14 @@ func TestFixConfigPath(t *testing.T) {
 			Dictionary = "/Users/god/uapi/docs/tomita/price/dict.gzt";
 
 			Output = {`
-		
-			got := fixFile(inp, "/allo/privet/dict.gzt")
-		
-			exp := `TTextMinerConfig {
+
+		got := fixFile(inp, "/allo/privet/dict.gzt")
+
+		exp := `TTextMinerConfig {
 
 			Dictionary = "/allo/privet/dict.gzt";
 
 			Output = {`
-				So(got,ShouldEqual,exp)
+		So(got, ShouldEqual, exp)
 	})
 }

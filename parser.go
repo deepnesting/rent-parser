@@ -25,9 +25,9 @@ func New(bin, typeConf, priceConf string) *Parser {
 	}
 }
 
-func (p *Parser) ParseType(text string) (int, error) {
+func (p *Parser) ParseType(text string) (int, int, error) {
 	if !parsetype.PreValid(text) {
-		return -1, fmt.Errorf("not valid")
+		return -1, -1, fmt.Errorf("not valid")
 	}
 
 	return parsetype.Parse(p.tomitaBin, p.typeConf, text)

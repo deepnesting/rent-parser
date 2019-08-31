@@ -95,14 +95,15 @@ type XmlFdoObject struct {
 	Document XmlDocument `xml:"document"`
 }
 
-func Parse(tomitaBin, confPath, text string) (int, error) {
+func Parse(tomitaBin, confPath, text string) (int, int, error) {
 	tom := tomita.NewTomita(tomitaBin, confPath)
 	text = normalize(text)
 	xml, err := tom.Parse(text)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return getByXML(xml), nil
+	t, r := getByXML(xml)
+	return t, r, nil
 }
 
 func PreValid(rawText string) bool {
@@ -209,10 +210,10 @@ func normalize(raw_text string) string {
 	return string(byte_text)
 }
 
-func getByXML(xml_row string) int {
+func getByXML(xml_row string) (offerType, roomCount int) {
 
 	if xml_row == "" {
-		return WRONG
+		return 0, WRONG
 	}
 
 	var document XmlFdoObject
@@ -222,12 +223,12 @@ func getByXML(xml_row string) int {
 	if err != nil {
 		log.Println(err)
 
-		return WRONG
+		return 0, WRONG
 	}
 
 	if len(document.Document.XMLFacts.FactErrorList) > 0 {
 
-		return WRONG
+		return 0, WRONG
 	}
 
 	rent := Type{Type: -1, Position: 99, Sequence: 99}
@@ -365,25 +366,33 @@ func getByXML(xml_row string) int {
 	case -1 != wrong.Type &&
 		(wrong.Sequence < rent.Sequence || (wrong.Sequence == rent.Sequence && wrong.Position < rent.Position)) &&
 		(wrong.Sequence < realty.Sequence || (wrong.Sequence == realty.Sequence && wrong.Position < realty.Position)):
-		return WRONG
+		return 0, WRONG
 
 	case -1 != rent.Type:
-		return rent.Type
+		return int(Rent), rent.Type
 
 	case -1 != neighbor.Type:
-		return neighbor.Type
+		return int(Neighbour), neighbor.Type
 
 	case -1 != wrong.Type:
-		return wrong.Type
+		return 0, wrong.Type
 
 	case -1 != realty.Type:
-		return realty.Type
+		return int(Realty), realty.Type
 	default:
-		return WRONG
+		return 0, WRONG
 	}
 
-	return WRONG
+	return 0, WRONG
 }
+
+type OfferType int
+
+const (
+	Rent OfferType = iota + 1
+	Realty
+	Neighbour
+)
 
 func getTypeByString(raw_text string) int {
 
