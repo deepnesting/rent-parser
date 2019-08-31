@@ -2,6 +2,8 @@ package rentparser
 
 import (
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParser(t *testing.T) {
@@ -27,4 +29,23 @@ func TestParser(t *testing.T) {
 	if typ != 2 {
 		t.Errorf("bad type=%d", typ)
 	}
+}
+
+func TestFixConfigPath(t *testing.T) {
+	Convey("test fix", t, func() {
+		inp := `TTextMinerConfig {
+
+			Dictionary = "/Users/god/uapi/docs/tomita/price/dict.gzt";
+
+			Output = {`
+		
+			got := fixFile(inp, "/allo/privet/dict.gzt")
+		
+			exp := `TTextMinerConfig {
+
+			Dictionary = "/allo/privet/dict.gzt";
+
+			Output = {`
+				So(got,ShouldEqual,exp)
+	})
 }
