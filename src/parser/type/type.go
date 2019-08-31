@@ -389,8 +389,8 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 type OfferType int
 
 const (
-	Rent OfferType = iota + 1
-	Realty
+	Realty OfferType = iota + 1
+	Rent
 	Neighbour
 )
 
