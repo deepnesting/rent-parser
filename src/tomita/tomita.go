@@ -2,7 +2,7 @@ package tomita
 
 import (
 	"bytes"
-	"io"
+	"io/ioutil"
 	"os/exec"
 	"strings"
 )
@@ -24,13 +24,14 @@ func NewTomita(bin string, config string) *Tomita {
 func (tomita Tomita) Parse(text string) (string, error) {
 	command := exec.Command(tomita.bin, tomita.config)
 	var Stdout bytes.Buffer
-	var Stderr bytes.Buffer
 	command.Stdin = strings.NewReader(text)
 	command.Stdout = &Stdout
-	command.Stderr = &Stderr
 
-	err := command.Start()
-	if err != nil && err != io.EOF {
+	// сюда попадает всякая дичь, типо дебага
+	command.Stderr = ioutil.Discard
+
+	err := command.Run()
+	if err != nil {
 		return "", err
 	}
 

@@ -34,5 +34,5 @@ func (p *Parser) ParsePrice(text string) (int, error) {
 		return -1, fmt.Errorf("not valid")
 	}
 
-	return price.Parse(p.tomitaBin, p.typeConf, text)
+	return price.Parse(p.tomitaBin, p.priceConf, text)
 }

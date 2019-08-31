@@ -66,7 +66,7 @@ func Parse(tomBin, conf, text string) (int, error) {
 		return 0, err
 	}
 
-	return getByXML(x), nil
+	return getByXML(x)
 }
 
 func normalize(text string) string {
@@ -120,16 +120,11 @@ func splitNumbers(text string) string {
 	return result.String()
 }
 
-func getByXML(xml_row string) int {
-
+func getByXML(xml_row string) (int, error) {
 	var document XmlFdoObject
-
 	err := xml.Unmarshal([]byte(xml_row), &document)
-
 	if err != nil {
-		log.Println(err)
-
-		return -1
+		return -1, err
 	}
 
 	price := Price{Value: -1, Position: 99, Sequence: 99}
@@ -186,5 +181,5 @@ func getByXML(xml_row string) int {
 		}
 	}
 
-	return int(price.Value)
+	return int(price.Value), nil
 }
