@@ -58,7 +58,7 @@ type XmlFdoObject struct {
 }
 
 func Parse(tomBin, conf, text string) (int, error) {
-	tom := tomita.NewTomita(tomBin, conf)
+	tom := tomita.NewTomita(tomBin, conf, true)
 
 	text = normalize(text)
 	x, err := tom.Parse(text)

@@ -102,7 +102,7 @@ type XmlFdoObject struct {
 }
 
 func Parse(tomitaBin, confPath, text string) (int, int, string, error) {
-	tom := tomita.NewTomita(tomitaBin, confPath)
+	tom := tomita.NewTomita(tomitaBin, confPath, true)
 	text = normalize(text)
 	xml, err := tom.Parse(text)
 	if err != nil {
@@ -113,7 +113,7 @@ func Parse(tomitaBin, confPath, text string) (int, int, string, error) {
 }
 
 func ParseFacts(tomitaBin, confPath, text string) (*Facts, error) {
-	tom := tomita.NewTomita(tomitaBin, confPath)
+	tom := tomita.NewTomita(tomitaBin, confPath, true)
 	text = normalize(text)
 	xml, err := tom.Parse(text)
 	if err != nil {
