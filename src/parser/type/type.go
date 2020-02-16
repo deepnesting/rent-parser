@@ -3,25 +3,31 @@ package parser
 import (
 	"encoding/xml"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
 	"github.com/deepnesting/rent-parser/src/tomita"
 )
 
-const ROOM = 0
 const FLAT_1 = 1
 const FLAT_2 = 2
 const FLAT_3 = 3
 const FLAT_4 = 4
 const STUDIO = 5
-const WRONG = 6
+const ROOM = 6
+const WRONG = 7
+
+const (
+	BuildTypeApart = 1
+	BuildTypeRoom  = 2
+	BuildTypeHouse = 3
+)
 
 type Type struct {
 	Type     int
 	Position int
 	Sequence int
+	Value    string
 }
 
 type XmlType struct {
@@ -95,57 +101,48 @@ type XmlFdoObject struct {
 	Document XmlDocument `xml:"document"`
 }
 
-func Parse(tomitaBin, confPath, text string) (int, int, error) {
+func Parse(tomitaBin, confPath, text string) (int, int, string, error) {
 	tom := tomita.NewTomita(tomitaBin, confPath)
 	text = normalize(text)
 	xml, err := tom.Parse(text)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, "", err
 	}
-	t, r := getByXML(xml)
-	return t, r, nil
+	t, r, value, err := getByXML(xml)
+	return t, r, value, err
 }
 
-func PreValid(rawText string) bool {
+func ParseFacts(tomitaBin, confPath, text string) (*Facts, error) {
+	tom := tomita.NewTomita(tomitaBin, confPath)
+	text = normalize(text)
+	xml, err := tom.Parse(text)
+	if err != nil {
+		return nil, err
+	}
+	return GetFacts(xml)
+}
 
+var (
+	flats  = []string{"кв", "ком", "одн", "дву", "тр(ё|e)", "студи", "сосед", "подсел"}
+	reFlat = regexp.MustCompile(fmt.Sprintf(`(?i).*(%s).*`, strings.Join(flats, "|")))
+	//searchRe = regexp.MustCompile(`(?i)(сним|ищ)(у|ем)[\w]*[^\w](кварт|комн|одн(ок|ушк)|дву(хк|шк)|тр[её](хк|шк))`)
+	searchRe = regexp.MustCompile(`(?i)(сним|ищ)(у|ем)[\w]*[^\w](кварт|комн|одн(ок|ушк)|дву(хк|шк)|тр[её](хк|шк))`)
+)
+
+func PreValid(rawText string) error {
 	normalizedText := normalize(rawText)
-
-	rawByteText := []byte(rawText)
 	normalizedByteText := []byte(normalizedText)
 
-	flats := []string{
-		"кв",
-		"ком",
-		"одн",
-		"дву",
-		"тр(ё|e)",
-		"студ",
-	}
-
-	reFlat := regexp.MustCompile(fmt.Sprintf(`(?i).*(%s).*`, strings.Join(flats, "|")))
 	if !reFlat.Match(normalizedByteText) {
-		return false
+		return fmt.Errorf("%w: flat not found in text(norm: %s)", ErrNotValid, normalizedText)
 	}
 
-	vkID := regexp.MustCompile(`(?i)^\[id\d+`)
-	if vkID.Match(rawByteText) {
-		return false
-	}
-
-	search := regexp.MustCompile(`(?i)(сним|ищ)(у|ем)[\w]*[^\w](кварт|комн|одн(ок|ушк)|дву(хк|шк)|тр[её](хк|шк))`)
-	if search.Match(normalizedByteText) {
-		return false
-	}
-
-	return true
+	return nil
 }
 
 func normalize(raw_text string) string {
-
 	byte_text := []byte(strings.TrimSpace(raw_text))
-
 	re := regexp.MustCompile(`\?\W{0,10}$`)
-
 	if nil != re.Find(byte_text) {
 		return ""
 	}
@@ -210,25 +207,160 @@ func normalize(raw_text string) string {
 	return string(byte_text)
 }
 
-func getByXML(xml_row string) (offerType, roomCount int) {
+var ErrNotValid = fmt.Errorf("not valid")
 
+type Facts struct {
+	RentFacts      []Fact
+	RealtyFacts    []Fact
+	NeighbourFacts []Fact
+}
+
+func (f Facts) SearchType() (int, error) {
+	if len(f.NeighbourFacts) > 0 && len(f.RealtyFacts) == 0 && len(f.RentFacts) == 0 {
+		return int(Neighbour), nil
+	}
+	if len(f.RentFacts) > 0 && len(f.RealtyFacts) == 0 && len(f.NeighbourFacts) == 0 {
+		return int(Rent), nil
+	}
+	if len(f.RealtyFacts) > 0 && len(f.RentFacts) == 0 && len(f.NeighbourFacts) == 0 {
+		return int(Realty), nil
+	}
+	return 0, ErrNotValid
+}
+
+func (f Facts) BuildType() (int, error) {
+	if f.IsStudio() {
+		return BuildTypeApart
+	}
+	if f.IsSRoom() {
+		return BuildTypeRoom
+	}
+	return 0, fmt.Errorf("invalid")
+}
+
+func (f Facts) IsStudio() bool {
+	for _, fact := range f.NeighbourFacts {
+		if getTypeByString(fact.Value) == STUDIO {
+			return true
+		}
+	}
+	for _, fact := range f.RentFacts {
+		if getTypeByString(fact.Value) == STUDIO {
+			return true
+		}
+	}
+	for _, fact := range f.RealtyFacts {
+		if getTypeByString(fact.Value) == STUDIO {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (f Facts) IsSRoom() bool {
+	for _, fact := range f.NeighbourFacts {
+		if getTypeByString(fact.Value) == ROOM {
+			return true
+		}
+	}
+	for _, fact := range f.RentFacts {
+		if getTypeByString(fact.Value) == ROOM {
+			return true
+		}
+	}
+	for _, fact := range f.RealtyFacts {
+		if getTypeByString(fact.Value) == ROOM {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (f Facts) RoomCount() (int, error) {
+	var vals []int
+	for _, fact := range f.NeighbourFacts {
+		if n := getTypeByString(fact.Value); n != 0 && n != WRONG && n != ROOM {
+			vals = append(vals, n)
+		}
+	}
+	for _, fact := range f.RentFacts {
+		if n := getTypeByString(fact.Value); n != 0 && n != WRONG && n != ROOM {
+			vals = append(vals, n)
+		}
+	}
+	for _, fact := range f.RealtyFacts {
+		if n := getTypeByString(fact.Value); n != 0 && n != WRONG && n != ROOM {
+			vals = append(vals, n)
+		}
+	}
+
+	if len(vals) > 0 {
+		return vals[0], nil
+	}
+
+	return 0, ErrNotValid
+}
+
+type Fact struct {
+	Value string
+}
+
+func GetFacts(input string) (*Facts, error) {
+	var document XmlFdoObject
+	err := xml.Unmarshal([]byte(input), &document)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal xml: %w", err)
+	}
+	if len(document.Document.XMLFacts.FactErrorList) > 0 {
+		return nil, fmt.Errorf("fact errors (%v): %w", document.Document.XMLFacts.FactErrorList, ErrNotValid)
+	}
+
+	var result = new(Facts)
+
+	// rentlist
+	for _, fact := range document.Document.XMLFacts.FactRentList {
+		if len(fact.TypeList) == 0 {
+			continue
+		}
+		result.RentFacts = append(result.RentFacts, Fact{
+			Value: fact.TypeList[0].Value,
+		})
+	}
+	for _, fact := range document.Document.XMLFacts.FactRealtyList {
+		if len(fact.TypeList) == 0 {
+			continue
+		}
+		result.RealtyFacts = append(result.RealtyFacts, Fact{
+			Value: fact.TypeList[0].Value,
+		})
+	}
+	for _, fact := range document.Document.XMLFacts.FactNeighborList {
+		if len(fact.TypeList) == 0 {
+			continue
+		}
+		result.NeighbourFacts = append(result.NeighbourFacts, Fact{
+			Value: fact.TypeList[0].Value,
+		})
+	}
+	return result, nil
+}
+
+func getByXML(xml_row string) (int, int, string, error) {
 	if xml_row == "" {
-		return 0, WRONG
+		return 0, 0, "", fmt.Errorf("empty string: %w", ErrNotValid)
 	}
 
 	var document XmlFdoObject
 
 	err := xml.Unmarshal([]byte(xml_row), &document)
-
 	if err != nil {
-		log.Println(err)
-
-		return 0, WRONG
+		return 0, 0, "", fmt.Errorf("unmarshal xml: %w", err)
 	}
 
 	if len(document.Document.XMLFacts.FactErrorList) > 0 {
-
-		return 0, WRONG
+		return 0, 0, "", fmt.Errorf("fact errors (%v): %w", document.Document.XMLFacts.FactErrorList, ErrNotValid)
 	}
 
 	rent := Type{Type: -1, Position: 99, Sequence: 99}
@@ -236,7 +368,6 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 		if len(fact.TypeList) == 0 {
 			continue
 		}
-
 		position := fact.FirstWord
 		sequence := fact.Sequence
 		rtype := getTypeByString(fact.TypeList[0].Value)
@@ -245,7 +376,7 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 			rent.Position = position
 			rent.Sequence = sequence
 			rent.Type = rtype
-
+			rent.Value = fact.TypeList[0].Value
 			break
 		}
 
@@ -253,7 +384,7 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 			rent.Position = position
 			rent.Sequence = sequence
 			rent.Type = rtype
-
+			rent.Value = fact.TypeList[0].Value
 			continue
 		}
 
@@ -261,7 +392,7 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 			rent.Position = position
 			rent.Sequence = sequence
 			rent.Type = rtype
-
+			rent.Value = fact.TypeList[0].Value
 			continue
 		}
 	}
@@ -344,11 +475,13 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 
 		position := fact.FirstWord
 		sequence := fact.Sequence
+		rtype := getTypeByString(fact.WrongList[0].Value)
 
 		if sequence == wrong.Sequence && position < wrong.Position {
 			wrong.Position = position
 			wrong.Sequence = sequence
-			wrong.Type = WRONG
+			wrong.Type = rtype
+			wrong.Value = fact.WrongList[0].Value
 
 			continue
 		}
@@ -356,7 +489,8 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 		if sequence < wrong.Sequence {
 			wrong.Position = position
 			wrong.Sequence = sequence
-			wrong.Type = WRONG
+			wrong.Type = rtype
+			wrong.Value = fact.WrongList[0].Value
 
 			continue
 		}
@@ -366,24 +500,18 @@ func getByXML(xml_row string) (offerType, roomCount int) {
 	case -1 != wrong.Type &&
 		(wrong.Sequence < rent.Sequence || (wrong.Sequence == rent.Sequence && wrong.Position < rent.Position)) &&
 		(wrong.Sequence < realty.Sequence || (wrong.Sequence == realty.Sequence && wrong.Position < realty.Position)):
-		return 0, WRONG
-
+		return 0, 0, "", fmt.Errorf("some wrong (value: %s)", wrong.Value)
 	case -1 != rent.Type:
-		return int(Rent), rent.Type
-
+		return int(Rent), rent.Type, rent.Value, nil
 	case -1 != neighbor.Type:
-		return int(Neighbour), neighbor.Type
-
+		return int(Neighbour), neighbor.Type, "", nil
 	case -1 != wrong.Type:
-		return 0, wrong.Type
-
+		return 0, 0, "", fmt.Errorf("some wrong 2")
 	case -1 != realty.Type:
-		return int(Realty), realty.Type
+		return int(Realty), realty.Type, "", nil
 	default:
-		return 0, WRONG
+		return 0, 0, "", fmt.Errorf("unexpected error: %w", ErrNotValid)
 	}
-
-	return 0, WRONG
 }
 
 type OfferType int

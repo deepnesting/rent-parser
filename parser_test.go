@@ -3,6 +3,7 @@ package rentparser
 import (
 	"testing"
 
+	parsetype "github.com/deepnesting/rent-parser/src/parser/type"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -22,16 +23,21 @@ func TestParser(t *testing.T) {
 		t.Errorf("price=%d", price)
 	}
 
-	offerType, typ, err := p.ParseType(text)
-	if err != nil {
-		t.Errorf("type err=%s", err)
-	}
-	if offerType != 1 {
-		t.Errorf("bad offer type detection got=%d", offerType)
-	}
-	if typ != 2 {
-		t.Errorf("bad type=%d", typ)
-	}
+	Convey("test parsing", t, func() {
+		for tc, c := range map[string]struct {
+			In    string
+			Facts parsetype.Facts
+		}{
+			"однушка":      {"сдам однокомнатную квартиру", parsetype.Facts{RealtyFacts: []parsetype.Fact{{"1 КВАРТИРА"}}, RentFacts: []parsetype.Fact{{"1 КВАРТИРА"}}}},
+			"сдам однушку": {"сдам однушку", parsetype.Facts{RealtyFacts: []parsetype.Fact{{"1 КВАРТИРА"}}, RentFacts: []parsetype.Fact{{"1 КВАРТИРА"}}}},
+			"ищу соседа":   {"ищу соседа в комнату", parsetype.Facts{RealtyFacts: []parsetype.Fact{{"КОМНАТА"}}, NeighbourFacts: []parsetype.Fact{{"КОМНАТА"}}}},
+		} {
+			Println(tc)
+			facts, err := p.ParseFacts(c.In)
+			So(err, ShouldBeNil)
+			So(*facts, ShouldResemble, c.Facts)
+		}
+	})
 }
 
 func TestFixConfigPath(t *testing.T) {
