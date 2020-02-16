@@ -230,10 +230,10 @@ func (f Facts) SearchType() (int, error) {
 
 func (f Facts) BuildType() (int, error) {
 	if f.IsStudio() {
-		return BuildTypeApart
+		return BuildTypeApart, nil
 	}
 	if f.IsSRoom() {
-		return BuildTypeRoom
+		return BuildTypeRoom, nil
 	}
 	return 0, fmt.Errorf("invalid")
 }
